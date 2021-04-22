@@ -1,30 +1,53 @@
-import {useEffect, useRef} from "react";
+import LetterDraw, {LetterDrawHandle} from "../components/LetterDraw";
+import {useCallback, useRef, useState} from "react";
+import pixelmatch from 'pixelmatch';
+
 
 export default function Home() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [char, setChar] = useState(null);
+    const localCanvas = useRef<HTMLCanvasElement>(null);
+    const letterDraw = useRef<LetterDrawHandle>(null);
 
-    useEffect(() => {
-        if (!canvasRef.current) {
+    const showImageData = useCallback(() => {
+        if (!letterDraw.current) {
             return;
         }
 
-        const canvas = canvasRef.current;
-
+        const canvas = letterDraw.current.getCanvas();
+        const canvasLocal = localCanvas.current;
+        const localCtx = localCanvas.current.getContext('2d');
         const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = true;
-        const img = new Image();
-        img.src = '/images/letters-stroke.png';
-        img.addEventListener('load', () => {
-            ctx.drawImage(img, 0, 0, 160, 288, 0, 0, canvas.width, canvas.height);
-        });
-    }, []);
+
+        const img1 = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const img2 = localCtx.getImageData(0, 0, canvasLocal.width, canvasLocal.height).data;
+
+        const result = pixelmatch(
+            img1,
+            img2,
+            null,
+            canvas.width,
+            canvas.height,
+        )
+
+        console.log(result);
+
+        localCtx.putImageData(ctx.getImageData(0, 0, canvas.width, canvas.height), 0, 0);
+    }, [letterDraw, localCanvas]);
 
     return (
         <div>
+            <LetterDraw ref={letterDraw} character={char}/>
+            <input type="text" maxLength={1} onChange={e => setChar(e.target.value)}/>
+            <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                onClick={showImageData}
+            >
+                Button
+            </button>
             <canvas
-                ref={canvasRef}
-                width="160"
-                height="288"
+                ref={localCanvas}
+                width={320}
+                height={576}
             />
         </div>
     );
