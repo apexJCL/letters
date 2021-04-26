@@ -1,12 +1,15 @@
 import React from "react";
 import AppTitle from '../components/AppTitle';
-import LetterDraw from '../components/LetterDraw';
+import MenuCard from "../components/MenuCard";
 
 export default function Home() {
   return (
     <div className="h-screen flex flex-col justify-center items-center">
-      <AppTitle text="Abecedario Interactivo" />
-      <LetterDraw character="o" />
+      <AppTitle text="Abecedario Interactivo"/>
+      <div className="flex space-x-12">
+        <MenuCard text="Sonidos" imgUrl="/images/volume.png" href="/"/>
+        <MenuCard text="Trazos" imgUrl="/images/pencil.png" href="/letter-strokes"/>
+      </div>
     </div>
   );
 }

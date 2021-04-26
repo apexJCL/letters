@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useImperativeHandle, useState } from "react";
+import React, {useCallback, useEffect, useImperativeHandle, useState} from "react";
 import pixel_match from 'pixelmatch';
-import { useImageLoad } from '../utils/hooks';
+import {useImageLoad} from '../utils/hooks';
 
 const renderState = {
   capturing: false,
@@ -12,7 +12,36 @@ const letterWidth = 192;
 const letterHeight = 384;
 const canvasWidth = letterWidth * 2;
 const canvasHeight = letterHeight * 2;
-const letters = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnÑñOoPpQqRrSsTtUuVvWwXxYyZz';
+export const letters = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnÑñOoPpQqRrSsTtUuVvWwXxYyZz';
+const maxAllowedStrokesPerLetter = {
+  A: 2, a: 2,
+  B: 2, b: 2,
+  C: 1, c: 1,
+  D: 2, d: 2,
+  E: 4, e: 1,
+  F: 3, f: 2,
+  G: 2, g: 2,
+  H: 3, h: 2,
+  I: 3, i: 2,
+  J: 2, j: 2,
+  K: 3, k: 3,
+  L: 2, l: 1,
+  M: 4, m: 3,
+  N: 3, n: 2,
+  'Ñ': 4, 'ñ': 3,
+  O: 1, o: 1,
+  P: 2, p: 2,
+  Q: 2, q: 2,
+  R: 3, r: 2,
+  S: 1, s: 1,
+  T: 2, t: 2,
+  U: 1, u: 1,
+  V: 2, v: 2,
+  W: 4, w: 4,
+  X: 2, x: 2,
+  Y: 3, y: 2,
+  Z: 3, z: 3,
+};
 
 const getCharXPosition = (char: string) => {
   const letterIndex = letters.indexOf(char);
@@ -30,10 +59,11 @@ const compareDrawing = (canvas: HTMLCanvasElement, targetCharMapImg: HTMLImageEl
   const {width, height} = canvas;
 
   // First draw the target character to an in-memory canvas
-  const localCanvas = document.createElement('canvas');
+  const localCanvas = document.getElementById('debugCanvas') as HTMLCanvasElement;
   localCanvas.width = width;
   localCanvas.height = height;
   const localCtx = localCanvas.getContext('2d');
+  localCtx.clearRect(0, 0, width, height);
   localCtx.drawImage(targetCharMapImg, getCharXPosition(char), 0, letterWidth, letterHeight, 0, 0, width, height);
 
   // Thereafter, obtain both canvas image data and compare
@@ -164,7 +194,7 @@ const useCanvasTouchListener = (canvas: HTMLCanvasElement, mouseEventCallback: (
 
     // Configure pencil
     const ctx = canvas.getContext('2d');
-    ctx.lineWidth = 40;
+    ctx.lineWidth = 50;
     ctx.lineCap = 'round';
 
     // Clean-up the previous event listeners
@@ -247,19 +277,22 @@ interface LetterDrawElement {
   clearCanvas: () => void;
   getImageData: () => ImageData;
   /**
-   * Calculates the pixel difference between the expected drawing and the
-   * user-captured drawing.
+   * Calculate the score of the current drawing
    */
   calculateDifference: () => number;
 }
 
-const LetterDraw = React.forwardRef<LetterDrawElement, LetterDrawProps>(({character, ...rest}, ref) => {
+const LetterDraw = React.forwardRef<LetterDrawElement, LetterDrawProps>((
+  {
+    character,
+    ...rest
+  }, ref
+) => {
   const [strokes, setStrokes] = useState(0);
-  const [accuracy, setAccuracy] = useState(0);
   const [canvasCleared, setCanvasCleared] = useState(false);
   const [canvas, setCanvasRef] = useCanvasSetup();
   const [strokesImage, isImageLoaded] = useImageLoad('/images/letters-stroke.png');
-  const [targetImage, isTargetImageLoaded] = useImageLoad('/images/letters-regular.png');
+  const [targetImage,] = useImageLoad('/images/letters-regular.png');
 
   const onMouseEvent = useCallback((event: MouseEvent) => {
     switch (event.type) {
@@ -288,15 +321,6 @@ const LetterDraw = React.forwardRef<LetterDrawElement, LetterDrawProps>(({charac
     setStrokes(0);
   }, [canvas, isImageLoaded, character, strokesImage, canvasCleared]);
 
-  // Calculates the accuracy after every stroke
-  useEffect(() => {
-    if (!canvas) {
-      return;
-    }
-
-    setAccuracy(compareDrawing(canvas, targetImage, character))
-  }, [strokes, canvas, targetImage, character]);
-
   const clearCanvas = useCallback(() => {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -305,13 +329,23 @@ const LetterDraw = React.forwardRef<LetterDrawElement, LetterDrawProps>(({charac
 
   const getImageData = useCallback(() => canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height), [canvas]);
 
+  const calculatePixelDifference = useCallback(() => compareDrawing(canvas, targetImage, character), [canvas, targetImage, character]);
+
   const calculateDifference = useCallback(() => {
+    console.log('calculateDifference');
     if (!character) {
       return -1
     }
 
-    return compareDrawing(canvas, targetImage, character);
-  }, [canvas, targetImage, character]);
+    const pixelDifference = calculatePixelDifference();
+    const maxAllowedStrokes = maxAllowedStrokesPerLetter[character];
+
+    const totalPixels = canvasWidth * canvasHeight;
+    const correctPixels = (totalPixels - (pixelDifference)) / totalPixels;
+    console.log('correct pixels', correctPixels)
+
+    return ((pixelDifference / canvasWidth * canvasHeight) * 0.65) + ((strokes / maxAllowedStrokes) * 0.35);
+  }, [strokes, calculatePixelDifference]);
 
   useImperativeHandle(ref, () => ({
     ...rest,
@@ -322,12 +356,19 @@ const LetterDraw = React.forwardRef<LetterDrawElement, LetterDrawProps>(({charac
   }), [canvas]);
 
   return (
-    <canvas
-      ref={setCanvasRef}
-      width={canvasWidth}
-      height={canvasHeight}
-      className="border-2"
-    />
+    <div className="flex">
+      <canvas
+        ref={setCanvasRef}
+        width={canvasWidth}
+        height={canvasHeight}
+        className="cursor-crosshair"
+      />
+      <canvas
+        width={canvasWidth}
+        height={canvasHeight}
+        id="debugCanvas"
+      />
+    </div>
   );
 });
 

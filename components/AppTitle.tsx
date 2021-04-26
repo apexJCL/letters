@@ -1,6 +1,6 @@
 import React from 'react';
 
-const colors =  [
+const colors = [
   'red', 'yellow', 'green', 'blue', 'indigo', 'purple', 'pink'
 ];
 
@@ -9,16 +9,40 @@ interface AppTitleProps {
   text: string;
 }
 
-const AppTitle: React.FC<AppTitleProps> = ({ text }) => {
+const Letter: React.FC<{ char: string }> = ({char}) => {
+  const color = colors[char.charCodeAt(0) % colors.length];
+  const colorClass = `text-${color}-500`;
+  return (
+    <span className={colorClass}>
+            {char}
+        </span>
+  );
+}
 
+const Word: React.FC<{ text: string }> = ({text}) => {
+  const chars = text.split('');
 
   return (
-    <div className="fredoka-one text-6xl">
-      { text.split('').map((c, index) => (
-        <span key={index} className="text-red-500">
-          {c}
-        </span>
-      )) }
+    <div>
+      {
+        chars.map((c, index) => (
+          <Letter key={index} char={c}/>
+        ))
+      }
+    </div>
+  );
+}
+
+const AppTitle: React.FC<AppTitleProps> = ({text}) => {
+  const words: string[] = text.split(' ');
+
+  return (
+    <div className="fredoka-one text-5xl lg:text-8xl">
+      {
+        words.map((word, index) => (
+          <Word key={index} text={word}/>
+        ))
+      }
     </div>
   );
 };
