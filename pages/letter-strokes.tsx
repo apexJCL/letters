@@ -1,6 +1,9 @@
-import React, {useCallback, useRef, useState} from 'react';
-import LetterDraw, {LetterDrawHandle, letters} from "../components/LetterDraw";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import LetterDraw, { LetterDrawHandle } from "../components/LetterDraw";
+import { letterMap } from '../utils/misc';
 import Image from 'next/image';
+import ScoreCard from '../components/ScoreCard';
+import Link from 'next/link';
 
 
 interface ActionBarProps {
@@ -17,14 +20,19 @@ const ActionBar: React.FC<ActionBarProps> = (
   }
 ) => {
   const onRandomLetterClick = () => {
-    const letter = letters.charAt(Math.floor(Math.random() * letters.length));
+    const letter = letterMap.charAt(Math.floor(Math.random() * letterMap.length));
     onUseRandomLetter(letter);
   }
 
   return (
     <div
-      className="flex items-center space-x-8 bottom-0 absolute bg-white p-4 shadow"
+      className="flex items-center justify-center space-x-8 bottom-2 absolute bg-white p-4 shadow"
     >
+      <Link href="/">
+        <button className="transform hover:scale-100 scale-75 transition duration-150 focus:outline-none">
+          <Image src="/images/back.png" width={42} height={42} />
+        </button>
+      </Link>
       <button
         className="fredoka-one text-3xl transform hover:-rotate-12 transition duration-150 cursor-pointer focus:outline-none"
         onClick={onRandomLetterClick}
@@ -56,8 +64,15 @@ const ActionBar: React.FC<ActionBarProps> = (
 };
 
 const Page: React.FC = () => {
-  const [letter, setLetter] = useState("A");
+  const [scoreCardVisible, setScoreCardVisible] = useState(false);
+  const [score, setScore] = useState(0);
+  const [letter, setLetter] = useState(letterMap.charAt(Math.floor(Math.random() * letterMap.length)));
   const letterRef = useRef<LetterDrawHandle>(null);
+
+  const resetScore = useCallback(() => {
+    setScoreCardVisible(false);
+    setScore(0);
+  }, []);
 
   const onClear = () => {
     if (!letterRef.current) {
@@ -65,30 +80,44 @@ const Page: React.FC = () => {
     }
 
     letterRef.current.clearCanvas();
+    resetScore();
   }
-
-  const onStrokeChange = useCallback((strokes, maxStrokesAllowed) => {
-    if (strokes < maxStrokesAllowed) {
-      return;
-    }
-
-    const pixelDifference = letterRef.current.calculateDifference();
-  }, []);
 
   const onOk = useCallback(() => {
     if (!letterRef.current) {
       return;
     }
 
-    console.log(letterRef.current.calculateDifference());
+    const floatScore = letterRef.current.calculateScore();
+
+    /**
+     * Scoring is:
+     * score < 0.7 = 1 star
+     * 0.8 <= score < 0.9 = 2 stars
+     * >= 0.9 = 3 stars
+     */
+
+    console.log('score is', floatScore);
+    if (floatScore >= 0.9) {
+      setScore(3);
+    } else if (floatScore >= 0.8) {
+      setScore(2);
+    } else {
+      setScore(1);
+    }
+
+    setScoreCardVisible(true);
   }, [letterRef]);
 
+  useEffect(() => resetScore(), [letter]);
+
   return (
-    <div className="relative flex justify-center">
+    <div className="relative flex justify-center h-full">
       <LetterDraw
         ref={letterRef}
         character={letter}
       />
+      <ScoreCard score={score} visible={scoreCardVisible} />
       <ActionBar
         onOk={onOk}
         onClear={onClear}

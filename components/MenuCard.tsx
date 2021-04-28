@@ -14,12 +14,12 @@ const MenuCard: React.FC<MenuCardProps> = ({text, imgUrl, href}) => {
       <div
         className="transform transition duration-200 hover:scale-110 cursor-pointer text-blue-700 hover:text-green-500">
         <Image
-          className="transform transition hover:rotate-6 hover:scale-75"
+          className="transform transition hover:rotate-6 hover:scale-75 cursor-pointer"
           src={imgUrl}
-          width={180}
-          height={180}
+          width={96}
+          height={96}
         />
-        <p className="fredoka-one text-2xl text-center">
+        <p className="fredoka-one text-2xl text-center cursor-pointer">
           {text}
         </p>
       </div>

@@ -4,6 +4,11 @@ module.exports = {
   theme: {
     extend: {},
     cursor: {
+      auto: 'auto',
+      default: 'default',
+      pointer: 'pointer',
+      text: 'text',
+      'not-allowed': 'not-allowed',
       crosshair: 'crosshair',
     },
   },
