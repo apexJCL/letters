@@ -150,6 +150,7 @@ const useCanvasTouchListener = (canvas: HTMLCanvasElement, mouseEventCallback: (
   };
 
   const onTouchMove = (ev: TouchEvent) => {
+    ev.preventDefault();
     const position = getTouchPosition(canvas, ev);
     const event = new MouseEvent('mousemove', {
       clientX: position.x,
@@ -192,7 +193,7 @@ const useCanvasTouchListener = (canvas: HTMLCanvasElement, mouseEventCallback: (
     // Set listeners
     canvas.addEventListener('touchstart', onTouchStart);
     canvas.addEventListener('touchend', onTouchEnd);
-    canvas.addEventListener('touchmove', onTouchMove);
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('mouseup', onMouseUp);

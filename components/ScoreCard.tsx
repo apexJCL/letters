@@ -17,14 +17,15 @@ const ScoreCard: React.FC<ScoreCardProps> = ({visible, score, maxScore}) => {
       "inset-1/2",
       "shadow", "bg-white",
       "rounded",
-      "w-48",
-      "h-20",
+      "w-56",
+      "h-36",
       "transform",
       "-translate-x-1/2",
       "flex",
-      "items-center",
+      "flex-col",
       "justify-center",
-      "space-x-2",
+      "items-center",
+      "space-y-4",
     ];
 
     if (visible) {
@@ -36,6 +37,46 @@ const ScoreCard: React.FC<ScoreCardProps> = ({visible, score, maxScore}) => {
     return classList.join(" ");
   }, [visible]);
 
+  const textCssClasses = useMemo(() => {
+    const classes = ["text-center", "fredoka-one"];
+
+    switch (score) {
+      case 3:
+        classes.push("text-green-500");
+        break;
+      case 2:
+        classes.push("text-blue-500");
+        break;
+      default:
+        classes.push("text-indigo-700");
+        break;
+    }
+
+    return classes.join(" ");
+  }, [score]);
+
+  let message;
+
+  if (score === 3) {
+    message = (
+      <>
+        ¡Felicidades!
+        <br />
+        Lo has hecho muy bien
+      </>
+    );
+  } else if (score === 2) {
+    message = (
+      <>
+        ¡Bien!
+        <br/>
+        Pero puedes hacerlo mejor
+      </>
+    );
+  } else {
+    message = "Sígue esforzándote, tú puedes lograrlo";
+  }
+
   const children = Array.from(Array(maxScore).keys()).map((index) => {
     const imgSrc = (index + 1) <= score ? '/images/star-filled.png' : '/images/star-outline.png';
 
@@ -46,7 +87,12 @@ const ScoreCard: React.FC<ScoreCardProps> = ({visible, score, maxScore}) => {
 
   return (
     <div className={cssClasses}>
-      {children}
+      <div className="flex flex-wrap items-center justify-center space-x-2">
+        {children}
+      </div>
+      <p className={textCssClasses}>
+        {message}
+      </p>
     </div>
   );
 };
